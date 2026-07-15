@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Copiar SQL para Supabase</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #0d0d0d;
+      color: #f0f0f0;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 40px 20px;
+    }
+    .container {
+      background: #111;
+      border: 1px solid #222;
+      border-radius: 10px;
+      padding: 30px;
+    }
+    h1 {
+      color: #C8A96E;
+      margin-bottom: 20px;
+    }
+    .step {
+      margin-bottom: 30px;
+      padding: 20px;
+      background: #1a1a1a;
+      border-left: 4px solid #C8A96E;
+      border-radius: 5px;
+    }
+    .step-title {
+      font-weight: bold;
+      font-size: 16px;
+      margin-bottom: 10px;
+    }
+    button {
+      background: #C8A96E;
+      color: #000;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+      margin-top: 10px;
+      font-size: 14px;
+    }
+    button:hover {
+      background: #dfc08a;
+    }
+    .code-block {
+      background: #0d0d0d;
+      border: 1px solid #222;
+      padding: 15px;
+      border-radius: 5px;
+      font-family: monospace;
+      font-size: 12px;
+      max-height: 300px;
+      overflow-y: auto;
+      margin-top: 10px;
+      color: #5DCA9A;
+    }
+    .status {
+      padding: 15px;
+      background: #1a1a1a;
+      border-radius: 5px;
+      margin-top: 20px;
+      display: none;
+    }
+    .status.success {
+      display: block;
+      border-left: 4px solid #5DCA9A;
+      color: #5DCA9A;
+    }
+    .status.error {
+      display: block;
+      border-left: 4px solid #FF6B6B;
+      color: #FF6B6B;
+    }
+    a {
+      color: #C8A96E;
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🤖 Setup do Chatbot - Supabase</h1>
+
+    <div class="step">
+      <div class="step-title">📋 PASSO 1: Copiar SQL</div>
+      <p>Clique para copiar o SQL das migrations para o clipboard:</p>
+      <button onclick="copiarSQL()">📋 Copiar SQL</button>
+      <div class="status success" id="copied-status">
+        ✅ SQL copiado para o clipboard!
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-title">🌐 PASSO 2: Ir para Supabase</div>
+      <p>Abra seu projeto Supabase:</p>
+      <button onclick="abrirSupabase()">🔗 Abrir Supabase Dashboard</button>
+    </div>
+
+    <div class="step">
+      <div class="step-title">⚙️ PASSO 3: Executar SQL</div>
+      <ol>
+        <li>No Supabase, clique em <strong>SQL Editor</strong></li>
+        <li>Clique em <strong>New Query</strong></li>
+        <li>Cole o SQL (Ctrl+V)</li>
+        <li>Clique em <strong>Run</strong></li>
+      </ol>
+    </div>
+
+    <div class="step">
+      <div class="step-title">✅ PRONTO!</div>
+      <p>Seu chatbot está pronto em:</p>
+      <button onclick="abrirWebsite()">🌐 Abrir Website</button>
+      <p style="margin-top: 10px; font-size: 12px; color: #999;">
+        Clique no botão dourado no canto inferior direito para testar o chatbot!
+      </p>
+    </div>
+
+    <div class="step">
+      <div class="step-title">🎛️ Admin Dashboard</div>
+      <p>Gerenciar agendamentos em:</p>
+      <button onclick="abrirAdmin()">🎛️ Abrir Admin</button>
+      <p style="margin-top: 10px; font-size: 12px; color: #999;">
+        Senha: <code style="background: #0d0d0d; padding: 2px 6px; border-radius: 3px;">josilva2024</code>
+      </p>
+    </div>
+
+    <div class="step">
+      <div class="step-title">🔍 Preview do SQL</div>
+      <div class="code-block" id="sql-preview"></div>
+    </div>
+  </div>
+
+  <script>
+    // SQL a copiar
+    const SQL = `-- ====== COPY EVERYTHING FROM HERE ======
+CREATE TABLE IF NOT EXISTS agendamentos (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  nome TEXT NOT NULL,
+  email TEXT NOT NULL,
+  telefone TEXT NOT NULL,
+  servico TEXT NOT NULL,
+  data_agendamento DATE NOT NULL,
+  hora_agendamento TIME NOT NULL,
+  mensagem TEXT,
+  status TEXT DEFAULT 'pendente' CHECK (status IN ('pendente', 'confirmado', 'concluido', 'cancelado')),
+  criado_em TIMESTAMPTZ DEFAULT now(),
+  atualizado_em TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS agendamentos_email_idx ON agendamentos(email);
+CREATE INDEX IF NOT EXISTS agendamentos_data_idx ON agendamentos(data_agendamento);
+CREATE INDEX IF NOT EXISTS agendamentos_status_idx ON agendamentos(status);
+CREATE INDEX IF NOT EXISTS agendamentos_criado_em_idx ON agendamentos(criado_em DESC);
+
+CREATE OR REPLACE TRIGGER agendamentos_update_timestamp
+  BEFORE UPDATE ON agendamentos
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at();
+
+CREATE TABLE IF NOT EXISTS chat_history (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  sessao_id TEXT NOT NULL,
+  tipo TEXT NOT NULL CHECK (tipo IN ('user', 'bot')),
+  mensagem TEXT NOT NULL,
+  metadata JSONB,
+  criado_em TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS chat_history_sessao_idx ON chat_history(sessao_id);
+CREATE INDEX IF NOT EXISTS chat_history_criado_em_idx ON chat_history(criado_em DESC);
+
+CREATE TABLE IF NOT EXISTS agendamento_feedback (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  agendamento_id UUID NOT NULL REFERENCES agendamentos(id) ON DELETE CASCADE,
+  rating INTEGER CHECK (rating >= 1 AND rating <= 5),
+  comentario TEXT,
+  criado_em TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS feedback_agendamento_idx ON agendamento_feedback(agendamento_id);
+
+ALTER TABLE agendamentos ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "agendamentos_insert" ON agendamentos FOR INSERT TO anon, authenticated WITH CHECK (true);
+CREATE POLICY "agendamentos_select" ON agendamentos FOR SELECT TO anon, authenticated USING (true);
+
+ALTER TABLE chat_history ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "chat_history_insert" ON chat_history FOR INSERT TO anon, authenticated WITH CHECK (true);
+CREATE POLICY "chat_history_select" ON chat_history FOR SELECT TO anon, authenticated USING (true);
+-- ====== COPY UNTIL HERE ======`;
+
+    // Mostrar preview
+    document.getElementById('sql-preview').textContent = SQL;
+
+    function copiarSQL() {
+      navigator.clipboard.writeText(SQL).then(() => {
+        const status = document.getElementById('copied-status');
+        status.style.display = 'block';
+        setTimeout(() => status.style.display = 'none', 3000);
+      });
+    }
+
+    function abrirSupabase() {
+      window.open('https://supabase.com/dashboard/project/oelbocimyfwwzkzbyswg/sql/new', '_blank');
+    }
+
+    function abrirWebsite() {
+      window.open('http://localhost:5173', '_blank');
+    }
+
+    function abrirAdmin() {
+      window.open('http://localhost:5173/#admin', '_blank');
+    }
+  </script>
+</body>
+</html>
