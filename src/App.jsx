@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { motion, useScroll, useSpring } from 'framer-motion'
 import Cursor from './components/ui/Cursor'
-import WhatsApp from './components/ui/WhatsApp'
 import Chatbot from './components/ui/Chatbot'
 import MobileBar from './components/ui/MobileBar'
 import Navbar from './components/sections/Navbar'
@@ -40,7 +39,6 @@ export default function App() {
     <div className="min-h-screen" style={{ background: '#0f0f0f', color: '#f0f0f0' }}>
       <Cursor />
       <ScrollProgress />
-      <WhatsApp />
       <Chatbot />
       <MobileBar navigate={navigate} />
       <Navbar page={page} navigate={navigate} />
