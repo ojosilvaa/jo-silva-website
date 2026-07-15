@@ -8,7 +8,7 @@ export default function Chatbot() {
     {
       id: 1,
       type: 'bot',
-      text: 'Olá! 👋 Sou a secretária eletrônica de Jo Silva PT. Como posso ajudar?',
+      text: 'Olá! 👋 Sou o Assistente IA de Jo Silva PT. Como posso ajudar?',
       timestamp: new Date(),
     },
   ]);
@@ -33,14 +33,57 @@ export default function Chatbot() {
     scrollToBottom();
   }, [messages]);
 
-  // Simular respostas da IA (depois integrar com Claude API)
-  const getBotResponse = (userMessage) => {
+  // Integração com Claude API para respostas inteligentes
+  const getBotResponse = async (userMessage) => {
+    try {
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': 'sk-ant-v3-test-key', // TODO: Adicionar chave real no .env
+          'anthropic-version': '2023-06-01',
+        },
+        body: JSON.stringify({
+          model: 'claude-3-5-sonnet-20241022',
+          max_tokens: 1024,
+          system: `Você é um assistente IA para Jo Silva PT, personal trainer.
+          Responda perguntas sobre os serviços: Personal Training (R$150), Nutrição (R$120), Avaliação Física (R$80), Acompanhamento Online (R$100).
+          Jo tem 10+ anos de experiência, especializado em hipertrofia, emagrecimento e performance.
+          Seja amigável, profissional e direto. Se o cliente perguntar sobre agendamento, ofereça para agendar uma sessão.
+          Sempre em português.`,
+          messages: [
+            {
+              role: 'user',
+              content: userMessage,
+            },
+          ],
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        return {
+          text: data.content[0].text,
+          action: userMessage.toLowerCase().includes('agendar') ? 'requestSchedule' : 'none',
+        };
+      } else {
+        // Fallback se Claude API não responder
+        return getBotResponseFallback(userMessage);
+      }
+    } catch (error) {
+      console.error('Erro ao chamar Claude API:', error);
+      return getBotResponseFallback(userMessage);
+    }
+  };
+
+  // Respostas padrão se Claude API não estiver disponível
+  const getBotResponseFallback = (userMessage) => {
     const msg = userMessage.toLowerCase();
 
     if (msg.includes('agendar') || msg.includes('marcar') || msg.includes('horário')) {
       return {
-        text: 'Perfeito! Vou te ajudar a agendar uma sessão. Qual serviço você tem interesse?\n\n1. Personal Training\n2. Nutrição\n3. Avaliação Física\n4. Acompanhamento Online',
-        action: 'showServices',
+        text: 'Perfeito! Vou te ajudar a agendar uma sessão. Qual serviço você tem interesse?\n\n1. Personal Training (R$150)\n2. Nutrição (R$120)\n3. Avaliação Física (R$80)\n4. Acompanhamento Online (R$100)',
+        action: 'requestSchedule',
       };
     }
 
@@ -51,29 +94,22 @@ export default function Chatbot() {
       };
     }
 
-    if (msg.includes('nutrição') || msg.includes('dieta')) {
-      return {
-        text: 'Acompanhamento nutricional! Jo oferece planos personalizados baseados em seus objetivos.\n\nQual é a sua disponibilidade?',
-        action: 'requestSchedule',
-      };
-    }
-
     if (msg.includes('preço') || msg.includes('valor') || msg.includes('custa')) {
       return {
-        text: '💰 Nossos valores:\n\n• Personal Training: R$ 150/sessão\n• Nutrição: R$ 120/consultoria\n• Avaliação Física: R$ 80\n• Online: R$ 100/sessão\n\nQuer agendar?',
+        text: '💰 Nossos valores:\n\n• Personal Training: R$ 150/sessão\n• Nutrição: R$ 120/consultoria\n• Avaliação Física: R$ 80\n• Online: R$ 100/sessão',
         action: 'none',
       };
     }
 
     if (msg.includes('sobre') || msg.includes('experiência') || msg.includes('quem')) {
       return {
-        text: 'Jo Silva é personal trainer com 10+ anos de experiência. Especializado em hipertrofia, emagrecimento e performance atlética. Formado em Educação Física e com certificações internacionais.\n\nGostaria de agendar uma avaliação gratuita?',
+        text: 'Jo Silva é personal trainer com 10+ anos de experiência. Especializado em hipertrofia, emagrecimento e performance atlética.',
         action: 'none',
       };
     }
 
     return {
-      text: 'Entendi! Você tem interesse em nossos serviços. Gostaria de agendar uma sessão ou quer saber mais sobre algo específico?',
+      text: 'Como posso ajudá-lo? Tenho interesse em nossos serviços de personal training, nutrição, avaliação física ou acompanhamento online?',
       action: 'none',
     };
   };
@@ -93,24 +129,22 @@ export default function Chatbot() {
     setInput('');
     setIsLoading(true);
 
-    // Simular delay de resposta
-    setTimeout(() => {
-      const response = getBotResponse(input);
-      const botMessage = {
-        id: messages.length + 2,
-        type: 'bot',
-        text: response.text,
-        action: response.action,
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, botMessage]);
+    // Obter resposta da IA
+    const response = await getBotResponse(input);
+    const botMessage = {
+      id: messages.length + 2,
+      type: 'bot',
+      text: response.text,
+      action: response.action,
+      timestamp: new Date(),
+    };
+    setMessages((prev) => [...prev, botMessage]);
 
-      if (response.action === 'requestSchedule') {
-        setShowScheduleForm(true);
-      }
+    if (response.action === 'requestSchedule') {
+      setShowScheduleForm(true);
+    }
 
-      setIsLoading(false);
-    }, 500);
+    setIsLoading(false);
   };
 
   const handleScheduleSubmit = async (e) => {
@@ -194,7 +228,7 @@ export default function Chatbot() {
             animate={{ scale: 1 }}
             exit={{ scale: 0 }}
             onClick={() => setIsOpen(true)}
-            className="fixed bottom-6 right-6 z-40 w-14 h-14 bg-gradient-to-br from-[#C8A96E] to-[#a8894e] rounded-full shadow-lg flex items-center justify-center hover:shadow-xl transition-shadow cursor-pointer"
+            className="fixed bottom-6 right-6 z-50 w-14 h-14 bg-gradient-to-br from-[#C8A96E] to-[#a8894e] rounded-full shadow-lg flex items-center justify-center hover:shadow-xl transition-shadow cursor-pointer"
           >
             <MessageCircle size={24} className="text-white" />
           </motion.button>
@@ -213,7 +247,7 @@ export default function Chatbot() {
             {/* Header */}
             <div className="bg-gradient-to-r from-[#C8A96E] to-[#a8894e] p-4 flex items-center justify-between">
               <div>
-                <h3 className="text-white font-bold text-sm">Secretária Jo Silva</h3>
+                <h3 className="text-white font-bold text-sm">Assistente IA Jo Silva</h3>
                 <p className="text-xs text-white/80">Sempre online 🟢</p>
               </div>
               <button
