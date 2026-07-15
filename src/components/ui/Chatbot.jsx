@@ -33,45 +33,32 @@ export default function Chatbot() {
     scrollToBottom();
   }, [messages]);
 
-  // Integração com Claude API para respostas inteligentes
+  // Integração com Claude API via Edge Function (seguro - sem API key exposta)
   const getBotResponse = async (userMessage) => {
     try {
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': 'sk-ant-v3-test-key', // TODO: Adicionar chave real no .env
-          'anthropic-version': '2023-06-01',
-        },
-        body: JSON.stringify({
-          model: 'claude-3-5-sonnet-20241022',
-          max_tokens: 1024,
-          system: `Você é um assistente IA para Jo Silva PT, personal trainer.
-          Responda perguntas sobre os serviços: Personal Training (R$150), Nutrição (R$120), Avaliação Física (R$80), Acompanhamento Online (R$100).
-          Jo tem 10+ anos de experiência, especializado em hipertrofia, emagrecimento e performance.
-          Seja amigável, profissional e direto. Se o cliente perguntar sobre agendamento, ofereça para agendar uma sessão.
-          Sempre em português.`,
-          messages: [
-            {
-              role: 'user',
-              content: userMessage,
-            },
-          ],
-        }),
-      });
+      const response = await fetch(
+        'https://oelbocimyfwwzkzbyswg.supabase.co/functions/v1/chat-claude',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9lbGJvY2lteWZ3d3premJ5c3dnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgwMDI2OTksImV4cCI6MjA5MzU3ODY5OX0.S2V54XWWnF58lTQNkvFU9JL1-toCQxacICvtITYL_3E',
+          },
+          body: JSON.stringify({ message: userMessage }),
+        }
+      );
 
       if (response.ok) {
         const data = await response.json();
         return {
-          text: data.content[0].text,
+          text: data.text,
           action: userMessage.toLowerCase().includes('agendar') ? 'requestSchedule' : 'none',
         };
       } else {
-        // Fallback se Claude API não responder
         return getBotResponseFallback(userMessage);
       }
     } catch (error) {
-      console.error('Erro ao chamar Claude API:', error);
+      console.error('Erro ao chamar Claude via Edge Function:', error);
       return getBotResponseFallback(userMessage);
     }
   };
