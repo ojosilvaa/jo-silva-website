@@ -157,8 +157,16 @@ export default function Chatbot() {
     };
     setMessages((prev) => [...prev, botMessage]);
 
+    // Ação para agendar - redireciona ao invés de mostrar form
     if (response.action === 'requestSchedule') {
-      setShowScheduleForm(true);
+      const agendaMsg = {
+        id: messages.length + 3,
+        type: 'bot',
+        text: '👇 Clique no botão abaixo para prosseguir com o agendamento:',
+        action: 'showScheduleButton',
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, agendaMsg]);
     }
 
     setIsLoading(false);
@@ -308,48 +316,22 @@ export default function Chatbot() {
                 </div>
               )}
 
-              {showScheduleForm && (
-                <form onSubmit={handleScheduleSubmit} className="space-y-3 mt-4">
-                  <input
-                    type="text"
-                    placeholder="Seu nome"
-                    value={scheduleData.nome}
-                    onChange={(e) => setScheduleData({ ...scheduleData, nome: e.target.value })}
-                    className="w-full px-3 py-2 bg-[#1a1a1a] border border-[#222] rounded-lg text-white text-sm focus:border-[#C8A96E] outline-none"
-                  />
-                  <input
-                    type="email"
-                    placeholder="Email"
-                    value={scheduleData.email}
-                    onChange={(e) => setScheduleData({ ...scheduleData, email: e.target.value })}
-                    className="w-full px-3 py-2 bg-[#1a1a1a] border border-[#222] rounded-lg text-white text-sm focus:border-[#C8A96E] outline-none"
-                  />
-                  <input
-                    type="tel"
-                    placeholder="Telefone"
-                    value={scheduleData.telefone}
-                    onChange={(e) => setScheduleData({ ...scheduleData, telefone: e.target.value })}
-                    className="w-full px-3 py-2 bg-[#1a1a1a] border border-[#222] rounded-lg text-white text-sm focus:border-[#C8A96E] outline-none"
-                  />
-                  <input
-                    type="date"
-                    value={scheduleData.data}
-                    onChange={(e) => setScheduleData({ ...scheduleData, data: e.target.value })}
-                    className="w-full px-3 py-2 bg-[#1a1a1a] border border-[#222] rounded-lg text-white text-sm focus:border-[#C8A96E] outline-none"
-                  />
-                  <input
-                    type="time"
-                    value={scheduleData.hora}
-                    onChange={(e) => setScheduleData({ ...scheduleData, hora: e.target.value })}
-                    className="w-full px-3 py-2 bg-[#1a1a1a] border border-[#222] rounded-lg text-white text-sm focus:border-[#C8A96E] outline-none"
-                  />
+              {/* Botão de agendamento simples (sem poluir o chat) */}
+              {messages.some(m => m.action === 'showScheduleButton') && (
+                <div className="mt-4 flex flex-col gap-2">
                   <button
-                    type="submit"
-                    className="w-full bg-[#C8A96E] text-black py-2 rounded-lg font-bold text-sm hover:bg-[#dfc08a] transition"
+                    onClick={() => {
+                      // Salvar dados da conversa
+                      localStorage.setItem('chatContext', JSON.stringify(messages));
+                      // Redirecionar ou abrir página de agendamento
+                      window.location.href = '#agendamento';
+                    }}
+                    className="w-full bg-[#C8A96E] text-black py-2 rounded-lg font-bold text-sm hover:bg-[#dfc08a] transition text-center cursor-pointer"
                   >
-                    Confirmar Agendamento
+                    📅 Agendar Agora
                   </button>
-                </form>
+                  <p className="text-xs text-[#999] text-center">Você será redirecionado para agendar sua avaliação gratuita</p>
+                </div>
               )}
 
               <div ref={messagesEndRef} />
