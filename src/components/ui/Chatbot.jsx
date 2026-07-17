@@ -33,7 +33,7 @@ export default function Chatbot() {
     scrollToBottom();
   }, [messages]);
 
-  // Integração com Claude API via Edge Function (seguro - sem API key exposta)
+  // Integração com Claude API via Edge Function - Chatbot VENDEDOR
   const getBotResponse = async (userMessage) => {
     try {
       const response = await fetch(
@@ -52,7 +52,7 @@ export default function Chatbot() {
         const data = await response.json();
         return {
           text: data.text,
-          action: userMessage.toLowerCase().includes('agendar') ? 'requestSchedule' : 'none',
+          action: userMessage.toLowerCase().includes('agendar') || userMessage.toLowerCase().includes('começar') || userMessage.toLowerCase().includes('plano') ? 'requestSchedule' : 'none',
         };
       } else {
         return getBotResponseFallback(userMessage);
@@ -63,40 +63,70 @@ export default function Chatbot() {
     }
   };
 
-  // Respostas padrão se Claude API não estiver disponível
+  // Respostas VENDEDORAS com preços reais
   const getBotResponseFallback = (userMessage) => {
     const msg = userMessage.toLowerCase();
 
-    if (msg.includes('agendar') || msg.includes('marcar') || msg.includes('horário')) {
+    // Qualificar: online vs presencial
+    if (msg.includes('online') || msg.includes('casa')) {
       return {
-        text: 'Perfeito! Vou te ajudar a agendar uma sessão. Qual serviço você tem interesse?\n\n1. Personal Training (R$150)\n2. Nutrição (R$120)\n3. Avaliação Física (R$80)\n4. Acompanhamento Online (R$100)',
+        text: '✅ Perfeito! Temos 3 planos online que funcionam muito bem:\n\n🎯 **Avaliação + Plano** - €47\n📊 **Plano 60 Dias** - €89 (€1,48/dia)\n🌟 **Transformação 120 Dias** - €149 (€1,24/dia) ← MELHOR VALOR\n\nQual seu objetivo? Emagrecer, ganhar massa ou condicionamento?',
         action: 'requestSchedule',
       };
     }
 
-    if (msg.includes('personal') || msg.includes('treino')) {
+    if (msg.includes('presencial') || msg.includes('academia') || msg.includes('ginásio')) {
       return {
-        text: 'Ótimo! Personal Training é nosso serviço principal. Duramos 50 minutos por sessão.\n\nQual é a sua disponibilidade preferida?',
+        text: '💪 Ótimo! Atendo presencialmente na Viva Gym, Porto.\n\n**Sessão Avulsa:** €35\n**Avaliação Inicial:** €50\n**Pacote Inicial:** €80 (Avaliação + sessão)\n\n**Planos Mensais:**\n• 2x/semana: €259 (8 sessões)\n• 3x/semana: €389 (12 sessões)\n\nQual frequência combina com você?',
         action: 'requestSchedule',
       };
     }
 
-    if (msg.includes('preço') || msg.includes('valor') || msg.includes('custa')) {
+    if (msg.includes('agendar') || msg.includes('começar') || msg.includes('começamos') || msg.includes('plano')) {
       return {
-        text: '💰 Nossos valores:\n\n• Personal Training: R$ 150/sessão\n• Nutrição: R$ 120/consultoria\n• Avaliação Física: R$ 80\n• Online: R$ 100/sessão',
+        text: '🚀 Vamos começar! Você prefere:\n\n📱 **Online** (qualquer lugar do mundo)\n💪 **Presencial** (Viva Gym, Porto)\n\nQual é mais conveniente?',
         action: 'none',
       };
     }
 
-    if (msg.includes('sobre') || msg.includes('experiência') || msg.includes('quem')) {
+    if (msg.includes('preço') || msg.includes('valor') || msg.includes('quanto custa') || msg.includes('custa')) {
       return {
-        text: 'Jo Silva é personal trainer com 10+ anos de experiência. Especializado em hipertrofia, emagrecimento e performance atlética.',
+        text: '💰 **PLANOS ONLINE:**\n• Avaliação + Plano: €47\n• Plano 60 Dias: €89\n• Transformação 120 Dias: €149 ⭐ Melhor ROI\n\n💪 **PLANOS PRESENCIAIS** (Porto):\n• Sessão Avulsa: €35\n• Avaliação: €50\n• 2x/semana: €259/mês\n• 3x/semana: €389/mês\n\nQual modelo te interessa?',
         action: 'none',
       };
     }
 
+    if (msg.includes('resultado') || msg.includes('funciona') || msg.includes('prova')) {
+      return {
+        text: '✨ **RESULTADOS REAIS:**\n• -7kg em 3 meses\n• +8kg de massa em 2 meses\n• -11kg com resultado duradouro\n• Clientes com 150+ alunos transformados\n\nTudo com planos que se adaptam à sua rotina. Sem enrolação, apenas estratégia.\n\nVocê quer saber mais sobre algum objetivo específico?',
+        action: 'none',
+      };
+    }
+
+    if (msg.includes('sobre') || msg.includes('quem é') || msg.includes('experiência')) {
+      return {
+        text: '👋 Sou **Joazio Silva** - Personal Trainer especializado em transformação física.\n\n📊 **4,5+ anos** de experiência\n👥 **150+ alunos** transformados\n🎯 Especialidades: Hipertrofia | Emagrecimento | Iniciantes | Condicionamento\n🌍 Atendimento: 100% Online + Presencial (Porto)\n\nMeu diferencial? Planos simples e reais que respeitam sua rotina.\n\nQuer começar uma avaliação gratuita?',
+        action: 'none',
+      };
+    }
+
+    if (msg.includes('emagrec') || msg.includes('perder peso') || msg.includes('dieta')) {
+      return {
+        text: '💪 **Especialista em Emagrecimento!**\n\nNão é sobre restrição, é sobre **estratégia**. Plano personalizado + acompanhamento = resultado real.\n\n✅ Resultado típico: -7kg em 3 meses\n✅ Suporte semanal\n✅ Ajustes contínuos\n\nPrefere começar **Online** (€47) ou **Presencial** (€50)?',
+        action: 'requestSchedule',
+      };
+    }
+
+    if (msg.includes('massa') || msg.includes('ganhar') || msg.includes('hipertrofia')) {
+      return {
+        text: '💪 **Especialista em Ganho de Massa!**\n\n+8kg de massa em 2 meses é possível com treino + nutrição estratégica.\n\n✅ Treino 100% personalizado\n✅ Acompanhamento semanal\n✅ Protocolo de performance\n\nPrefere **Online** (€47) ou **Presencial** (€50)?',
+        action: 'requestSchedule',
+      };
+    }
+
+    // Default: chamar para ação
     return {
-      text: 'Como posso ajudá-lo? Tenho interesse em nossos serviços de personal training, nutrição, avaliação física ou acompanhamento online?',
+      text: '👋 Oi! Sou o Assistente IA de Jo Silva.\n\nO que você procura?\n\n✅ Emagrecer\n✅ Ganhar massa\n✅ Começar do zero\n✅ Melhorar condicionamento\n\nTe ajudo a encontrar o plano perfeito! 💪',
       action: 'none',
     };
   };
